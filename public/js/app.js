@@ -2106,7 +2106,25 @@ function biasPanel(result, type, id, ready) {
       .sort((a, b) => a.score - b.score)[0];
     return `<article class="bias-spotlight"><h4>${esc(e.name)}</h4><div class="bias-rating-strip">${rows.map((v) => `<span><b>${esc(scored.rubric.categories.find((c) => c.id === v.categoryId)?.name || v.categoryId)}</b>${v.score === null ? "Not observable" : `${v.score}/4 · ${esc(scored.rubric.scale[v.score])}`}</span>`).join("")}</div>${focus ? `<h4>${focus.score <= 2 ? "Finding for faculty review" : "Observed strength"}</h4><p>${esc(focus.reason)}</p>${citations(focus.evidence.slice(0, 1))}${focus.coaching ? `<p><b>Next time:</b> ${esc(focus.coaching)}</p>` : ""}` : '<p>No quoted, observable rating is available for this encounter.</p>'}</article>`;
   }).join("") : "";
-  return `<section class="bias-panel"><h3>Bias assessment · Faculty review</h3><p>${r.status === "pending" ? "Awaiting analysis" : r.status === "unavailable" ? "Analysis unavailable" : "Analysis complete"}</p>${ready ? button(r.status === "complete" ? "Recheck bias assessment" : "Run bias assessment", "analyze-bias", `data-type="${esc(type)}" data-id="${esc(id)}"`, "pri") : '<p class="muted">Available after this encounter or all group trials finish.</p>'} <a href="/api/bias/rubric/file" target="_blank" rel="noopener">View source rubric</a><p class="muted">Five separate performance ratings: 1 Unsatisfactory to 4 Exemplary. Higher is stronger performance. No combined bias score.</p>${biasPresentation && scored ? spotlight + `<details><summary>Full rubric evidence and coaching</summary>${tables}</details>` : tables}${findings.length ? `<h4>Possible bias indicators for faculty review</h4>${findings.map((f) => `<p>${esc(f.text)}</p>${citations(f.evidence)}`).join("")}` : r.status === "complete" ? "<p>No additional indicators reported; this does not establish absence of bias.</p>" : ""}<section class="bias-limits"><h4>Limits of this analysis</h4>${r.limitations.map((l) => `<p class="muted">${esc(l)}</p>`).join("")}<p class="muted">Separate from the student's seven-domain assessment. Encounter differences alone do not establish bias.</p></section></section>`;
+  const rating = (e, id) =>
+    scored?.evaluations.find((v) => v.encounterId === e.id && v.categoryId === id);
+  const shown = (v) => (v?.score == null ? "Not observable" : v.score + "/4");
+  const quote = (...rows) =>
+    rows.map((v) => v?.evidence?.find((x) => x.quote)?.quote).find(Boolean);
+  const compactTable =
+    scored && scored.encounters.length > 1
+      ? `<div class="bias-table-wrap"><table class="bias-compact"><caption>At a glance · ratings 1–4, higher is stronger</caption><thead><tr><th>Patient</th><th>Anchoring · Confirmation</th><th>Demographic assumptions</th></tr></thead><tbody>${scored.encounters
+          .map((e) => {
+            const anchor = rating(e, "anchoring"),
+              confirm = rating(e, "confirmation"),
+              demo = rating(e, "demographic");
+            const reasoningQuote = quote(confirm, anchor);
+            const demoQuote = quote(demo);
+            return `<tr><th scope="row">${esc(e.name)}</th><td><b>${shown(anchor)} · ${shown(confirm)}</b>${reasoningQuote ? `<q>${esc(reasoningQuote)}</q>` : ""}</td><td><b>${shown(demo)}</b>${demoQuote ? `<q>${esc(demoQuote)}</q>` : ""}</td></tr>`;
+          })
+          .join("")}</tbody></table></div>`
+      : "";
+  return `<section class="bias-panel"><h3>Bias assessment · Faculty review</h3><p>${r.status === "pending" ? "Awaiting analysis" : r.status === "unavailable" ? "Analysis unavailable" : "Analysis complete"}</p>${compactTable}${ready ? button(r.status === "complete" ? "Recheck bias assessment" : "Run bias assessment", "analyze-bias", `data-type="${esc(type)}" data-id="${esc(id)}"`, "pri") : '<p class="muted">Available after this encounter or all group trials finish.</p>'} <a href="/api/bias/rubric/file" target="_blank" rel="noopener">View source rubric</a><p class="muted">Five separate performance ratings: 1 Unsatisfactory to 4 Exemplary. Higher is stronger performance. No combined bias score.</p>${biasPresentation && scored ? spotlight + `<details><summary>Full rubric evidence and coaching</summary>${tables}</details>` : tables}${findings.length ? `<h4>Possible bias indicators for faculty review</h4>${findings.map((f) => `<p>${esc(f.text)}</p>${citations(f.evidence)}`).join("")}` : r.status === "complete" ? "<p>No additional indicators reported; this does not establish absence of bias.</p>" : ""}<section class="bias-limits"><h4>Limits of this analysis</h4>${r.limitations.map((l) => `<p class="muted">${esc(l)}</p>`).join("")}<p class="muted">Separate from the student's seven-domain assessment. Encounter differences alone do not establish bias.</p></section></section>`;
 }
 function biasEvidenceView() {
   if (demoSession?.role !== "faculty" || !selectedEvidenceId) return "";
@@ -4871,8 +4889,17 @@ async function boot() {
       faceAnchors = null;
     }
     students = (await api("/api/students")).students;
+    // Direct link, e.g. app.html?open=results&student=ID, opens a faculty
+    // results page without clicking through (the role picker is not a login).
+    const link = new URLSearchParams(location.search);
+    if (link.get("open") === "results")
+      await api("/api/session", "POST", { role: "faculty" });
     const entry = await api("/api/session");
     demoSession = entry.session;
+    if (link.get("open") === "results" && demoSession?.role === "faculty") {
+      tab = "results";
+      resultsStudent = link.get("student") || "";
+    }
     catalogDiscipline = entry.preferences?.discipline || "";
     if (!demoSession) {
       await refresh();
@@ -4883,7 +4910,7 @@ async function boot() {
     if (demoSession.role === "student") tab = "student-home";
     const selected = list.find((p) => p.name === "Omar Sinclair") || list[0];
     if (selected && demoSession.role === "faculty") await pick(selected.id);
-    const id = localStorage.getItem("virtusp-active-v2");
+    const id = link.get("open") ? "" : localStorage.getItem("virtusp-active-v2");
     if (id)
       try {
         enc = (await api("/api/encounters/" + id)).encounter;
