@@ -1,5 +1,19 @@
 # Teammate and agent handoff
 
+## Patient Photos BLOB storage (2026-10-11)
+
+The eight user-supplied PNGs are unchanged under `corpus/patient-photos/`; the explicit UUID/roster manifest is `corpus/patient-photos.json`. `lib/patient-photos.js` creates the SQLite table `Patient Photos`, validates PNG/JPEG signatures and a 5 MB limit, and stores original bytes as BLOBs with MIME/hash metadata. `npm run photos:import` populated all eight rows in local `data/virtusp.sqlite`; it is idempotent and preserves stored rows. A mapped photo is lazily seeded in a fresh database when requested. Existing protected profile/encounter image routes read the BLOB, bypassing the static-image cache; explicit uploaded/versioned portraits and comparison presentations retain priority. Original clinical content/publications are unchanged. No PostgreSQL/cloud write, deployment or commit was performed for this change.
+
+Verification outside sandbox: focused photo/portrait tests 5 passed/0 failed; full `npm test` 244 passed/0 failed/0 skipped; local Pact 3 passed/0 failed after its image contract changed to PNG. The first focused sandbox run hit temporary-file rename EPERM and was retried. `node agents/test-report.js` ran after the full suite. `docs/PORTRAITS.md` documents schema, retrieval and import. Restart the app to load the updated endpoint code; back up the SQLite file as well as JSON state because JSON/S3 manifest recovery does not contain these BLOBs. Prerecorded talking-video assets are separate.
+
+## Judge documentation audit (2026-10-11)
+
+Judge path: README → `docs/HACKATHON_SUBMISSION.md` → `docs/DEMO.md#judge-proof-sequence`, with `REQUIREMENTS_TRACEABILITY.md`, `JUDGING_MATRIX.md`, `TESTING.md` and `DOCUMENTATION_AUDIT.md`. Tested app HEAD was `662c6d154c19de4276548a28ccabd6c498ac0117` with pre-existing uncommitted source changes. Root workspace is a separate static/browser prototype; do not use its local-only architecture as evidence about this app.
+
+Current audit runs outside sandbox: `npm test` 241 passed/0 failed/0 skipped; local integration 5/0; Pact 3/0 with broker settings cleared. Initial sandbox runs failed temporary-file rename/loopback permissions and were retried. Coverage: 75.46% lines, 79.11% branches, 79.47% functions. Local test reporter ran. No new live cloud/provider test, deployment, commit or push. Relative link scan: 37 documents, no missing file targets.
+
+For judging pin `DIALOGUE_MODE=strict`: optional natural dialogue generates prose and receives guarded truth, so earlier universal approved-line/no-hidden-values statements are unsafe. State is JSON/in-memory for Studio/encounters, SQLite for ground-truth and PostgreSQL/S3 for optional archival. Shared files and process-local sessions need multi-task correctness validation. Faculty review, accessibility, institutional identity, retention/governance, security review, live media quality and Canvas integration remain outstanding. Bias variance board gaps are heuristics, not validated bias diagnoses. See the audit report for changed documents and refused claims.
+
 ## Draft and Bedrock replies (2026-10-11)
 
 `lib/cloud.js` `json()` was returning an observability wrapper, so draft review, synthetic generation, and patient replies read fields that were not on that wrapper. It now returns the parsed object and keeps the observation detail on a non-enumerable `__obs` property. `node --test tests/cloud.test.js tests/generation.test.js tests/patient-bedrock.test.js` passed 12 tests, and `npm test` then passed 217 tests with 0 failures. These checks are not clinical validation.
