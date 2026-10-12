@@ -2,6 +2,8 @@
 
 **AI powers the experience. Faculty defines the patient.**
 
+[Video demo](https://www.youtube.com/watch?v=BoyM4aReCr8) - Recorded for Rutgers Health Hack 2026
+
 [Live demo](https://d18g7r2mfy8mll.cloudfront.net/app.html) · [Repository](https://github.com/nathans3/VirtuSP) · [Judge submission](docs/HACKATHON_SUBMISSION.md) · [Judging demo](docs/DEMO.md#judge-proof-sequence)
 
 Healthcare students need repeated interviewing and reasoning practice. Human standardized-patient sessions require trained participants and scheduling. VirtuSP provides additional formative practice, preparation and remediation alongside educators and human standardized patients. Learning gains and cost savings have not been measured.
