@@ -2,9 +2,10 @@
 
 **AI powers the experience. Faculty defines the patient.**
 
+
 [Live demo](https://d18g7r2mfy8mll.cloudfront.net/app.html) · [Repository](https://github.com/nathans3/VirtuSP) · [Judge submission](docs/HACKATHON_SUBMISSION.md) · [Judging demo](docs/DEMO.md#judge-proof-sequence)
 
-### Video Demo - Recorded for Rutgers Health Hack 2026.
+### [Video demo](https://www.youtube.com/watch?v=BoyM4aReCr8) - Recorded for Rutgers Health Hack 2026.
 
 [![Watch the Demo](https://img.youtube.com/vi/BoyM4aReCr8/maxresdefault.jpg)](https://www.youtube.com/watch?v=BoyM4aReCr8)
 
